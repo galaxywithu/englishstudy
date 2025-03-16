@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Word Learning Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>English Word Learning Assistant</h1>
+            <p>Enter an English word to get detailed explanations and examples</p>
+        </header>
+        
+        <main>
+            <div class="search-section">
+                <input type="text" id="word-input" placeholder="Enter an English word..." autofocus>
+                <button id="search-btn">Search</button>
+            </div>
+            
+            <div class="results-section" id="results">
+                <div class="result-card" id="baby-explanation">
+                    <h2>Simple Explanation (For Babies)</h2>
+                    <div class="content"></div>
+                </div>
+                
+                <div class="result-card" id="meanings-list">
+                    <h2>All Meanings</h2>
+                    <div class="content"></div>
+                </div>
+                
+                <div class="result-card" id="phrases">
+                    <h2>Common Phrases</h2>
+                    <div class="content"></div>
+                </div>
+                
+                <div class="result-card" id="related-words">
+                    <h2>Related Words</h2>
+                    <div class="content"></div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© 2025 English Word Learning Assistant</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
