@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // API endpoint - change this when deploying
-    const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word';
-    // const API_URL = 'https://your-backend-service.com/api/explain-word'; // Production
+    // const API_URL = '/api/explain-word'; // Local development
+    const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word'; // Production
+    // If the above URL doesn't work, try using the full URL, ensuring there are no extra spaces
+    // const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word';
 
     const wordInput = document.getElementById('word-input');
     const searchBtn = document.getElementById('search-btn');
@@ -107,7 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // API call function
     async function callAPI(word) {
         try {
-            console.log('Sending API request:', word); // Add log for debugging
+            console.log('Sending API request:', word);
+            
+            // Add timeout handling
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
             
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -115,18 +121,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ word }),
+                signal: controller.signal
             });
             
+            clearTimeout(timeoutId); // Clear timeout
+            
             if (!response.ok) {
-                throw new Error('API request failed');
+                throw new Error(`API request failed with status ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('API response:', data); // Add log for debugging
+            console.log('API response:', data);
             return data;
         } catch (error) {
             console.error('API call error:', error);
+            
+            // Show more detailed error information
+            if (error.name === 'AbortError') {
+                console.error('Request timed out. Worker may be inactive or URL incorrect.');
+            }
+            
             // If API call fails, use mock data
+            console.log('Using mock data instead');
             return mockApiCall(word);
         }
     }
