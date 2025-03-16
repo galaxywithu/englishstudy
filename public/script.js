@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // API endpoint - change this when deploying
-    const API_URL = '/api/explain-word'; // Local development
+    const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word';
     // const API_URL = 'https://your-backend-service.com/api/explain-word'; // Production
 
     const wordInput = document.getElementById('word-input');
