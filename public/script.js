@@ -2,9 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // API endpoint - change this when deploying
     // const API_URL = '/api/explain-word'; // Local development
     // const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word'; // Cloudflare Worker
+    // const API_URL = 'https://func-hjcbg-kgzbjasltj.cn-shanghai.fcapp.run'; // 阿里云函数直接地址
     
-    // 阿里云函数计算地址 - 需要修改为您部署后的实际地址
-    const API_URL = 'https://func-hjcbg-kgzbjasltj.cn-shanghai.fcapp.run';
+    // 使用Cloudflare Pages Functions代理 (相对路径)
+    const API_URL = '/api/explain-word'; 
     
     // 保存API可用状态
     let isApiAvailable = true;
@@ -186,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.error('API返回错误状态码:', testResponse.status);
                 isApiAvailable = false;
-                alert('警告：API连接测试返回错误，将使用模拟数据。请检查API配置。');
+                console.warn('API返回错误，将使用模拟数据。请检查API配置。');
             }
         } catch (error) {
             console.error('API connection failed:', error);
