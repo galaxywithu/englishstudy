@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 阿里云函数计算地址 - 需要修改为您部署后的实际地址
     const API_URL = 'https://func-hjcbg-kgzbjasltj.cn-shanghai.fcapp.run';
     
+    // 保存API可用状态
+    let isApiAvailable = true;
+    
     // 自动检测可用的API
     checkConnection(API_URL);
 
@@ -112,6 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // API call function
     async function callAPI(word) {
+        // 如果API已被检测为不可用，直接使用模拟数据
+        if (!isApiAvailable) {
+            console.log('API已被检测为不可用，使用模拟数据');
+            return mockApiCall(word);
+        }
+        
         try {
             console.log('Sending API request:', word);
             
@@ -155,19 +164,36 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkConnection(apiUrl) {
         console.log('Checking connection to API:', apiUrl);
         try {
+            // 尝试直接发送POST请求而不是OPTIONS请求
+            // OPTIONS请求可能会被CORS阻止，但POST请求在出错时会更明确
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
             
-            await fetch(apiUrl, {
-                method: 'OPTIONS',
+            const testResponse = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ word: 'test' }),
                 signal: controller.signal
             });
             
             clearTimeout(timeoutId);
-            console.log('API connection successful');
+            
+            if (testResponse.ok) {
+                console.log('API connection successful');
+                isApiAvailable = true;
+            } else {
+                console.error('API返回错误状态码:', testResponse.status);
+                isApiAvailable = false;
+                alert('警告：API连接测试返回错误，将使用模拟数据。请检查API配置。');
+            }
         } catch (error) {
             console.error('API connection failed:', error);
-            alert('警告：API连接失败，将使用模拟数据。请确保API地址正确，并且已经部署了阿里云函数。');
+            isApiAvailable = false;
+            
+            // 不显示弹窗，避免用户困扰
+            console.warn('API连接失败，将使用模拟数据');
         }
     }
     
