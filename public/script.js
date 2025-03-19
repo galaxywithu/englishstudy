@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const word = wordInput.value.trim();
         
         if (!word) {
-            alert('Please enter an English word');
+            showNotification('请输入一个英文单词', 'error');
             return;
         }
         
@@ -92,7 +92,18 @@ document.addEventListener('DOMContentLoaded', () => {
             resultsSection.classList.add('visible');
         } catch (error) {
             console.error('Error:', error);
-            alert('Failed to get word information, please try again later');
+            let errorMessage = '获取单词信息失败';
+            
+            if (error.message.includes('502')) {
+                errorMessage = '服务器暂时不可用，请稍后重试';
+            } else if (error.message.includes('network')) {
+                errorMessage = '网络连接失败，请检查网络设置';
+            } else if (error.message.includes('timeout')) {
+                errorMessage = '请求超时，请稍后重试';
+            }
+            
+            showNotification(errorMessage, 'error');
+            resultsSection.classList.remove('visible');
         } finally {
             // Hide loading state
             showLoading(false);
@@ -174,7 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTimeout(timeoutId);
                 
                 if (!response.ok) {
-                    throw new Error(`API返回错误: ${response.status}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `服务器错误 (${response.status})`);
                 }
                 
                 const data = await response.json();
@@ -199,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 所有重试都失败了
         console.error('所有重试都失败了:', lastError);
-        showNotification(`服务暂时不可用，请稍后重试`, 'error');
         throw lastError;
     }
     
