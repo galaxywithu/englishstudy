@@ -67,30 +67,13 @@ export async function onRequest(context) {
         console.error("Could not read error response", e);
       }
       
-      // 返回模拟数据
-      const word = JSON.parse(body).word || "example";
-      
+      // 返回错误响应
       return new Response(JSON.stringify({
-        babyExplanation: `"${word}" is a fun word! Imagine if you see a puppy, you can say "${word}" to describe it.`,
-        meaningsList: [
-          `${word} can be a noun, referring to an object or concept`,
-          `${word} can also be a verb, meaning to do something`,
-          `Sometimes ${word} can be an adjective, describing qualities of things`
-        ],
-        phrases: [
-          `${word} out - indicating completion or ending`,
-          `${word} up - indicating increase or improvement`,
-          `${word} in - indicating participation or inclusion`,
-          `${word} on - indicating continuation or persistence`,
-          `${word} off - indicating departure or cancellation`
-        ],
-        relatedWords: [
-          `${word}er - usually refers to a person who does this action`,
-          `${word}ing - the present participle of this word`,
-          `${word}ed - the past tense of this word`
-        ]
+        error: "Backend service error",
+        details: errorText,
+        status: response.status
       }), {
-        status: 200,
+        status: response.status,
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
@@ -143,45 +126,14 @@ export async function onRequest(context) {
     // 错误处理
     console.error("Proxy error:", error);
     
-    // 尝试解析请求体以获取单词
-    let word = "example";
-    try {
-      if (body) {
-        const parsedBody = JSON.parse(body);
-        word = parsedBody.word || word;
-      }
-    } catch (e) {}
-    
-    // 返回模拟数据而不是错误，确保用户体验
     return new Response(JSON.stringify({
-      babyExplanation: `"${word}" is a fun word! Imagine if you see a puppy, you can say "${word}" to describe it.`,
-      meaningsList: [
-        `${word} can be a noun, referring to an object or concept`,
-        `${word} can also be a verb, meaning to do something`,
-        `Sometimes ${word} can be an adjective, describing qualities of things`
-      ],
-      phrases: [
-        `${word} out - indicating completion or ending`,
-        `${word} up - indicating increase or improvement`,
-        `${word} in - indicating participation or inclusion`,
-        `${word} on - indicating continuation or persistence`,
-        `${word} off - indicating departure or cancellation`
-      ],
-      relatedWords: [
-        `${word}er - usually refers to a person who does this action`,
-        `${word}ing - the present participle of this word`,
-        `${word}ed - the past tense of this word`
-      ],
-      _debug: {
-        source: "fallback",
-        error: error.message
-      }
+      error: "Service error",
+      details: error.message
     }), {
-      status: 200, // 返回200而不是错误状态，确保前端能处理
+      status: 500,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json",
-        "X-Error-Info": error.message
+        "Content-Type": "application/json"
       }
     });
   }

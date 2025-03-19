@@ -234,8 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('API connection failed:', error);
             isApiAvailable = false;
             
-            // 不显示弹窗，避免用户困扰
-            console.warn('API连接失败，将使用模拟数据');
+            // 显示错误信息给用户
+            showNotification('API连接失败，请稍后重试', 'error');
         }
     }
     
