@@ -1,4 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 添加通知样式
+    const style = document.createElement('style');
+    style.textContent = `
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            animation: slide-in 0.5s ease-out;
+        }
+        
+        @keyframes slide-in {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification.error {
+            background-color: #ff4d4f;
+        }
+        
+        .notification.info {
+            background-color: #1890ff;
+        }
+        
+        .notification.success {
+            background-color: #52c41a;
+        }
+    `;
+    document.head.appendChild(style);
+    
     // API endpoint - change this when deploying
     // const API_URL = '/api/explain-word'; // Local development
     // const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word'; // Cloudflare Worker
@@ -49,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             // Call API
-            const data = await callAPI(word);
+            const data = await callAPIWithRetry(word);
             
             // Display results
             displayResults(data);
@@ -115,50 +149,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // API call function
-    async function callAPI(word) {
-        // 如果API已被检测为不可用，直接使用模拟数据
-        if (!isApiAvailable) {
-            console.log('API已被检测为不可用，使用模拟数据');
-            return mockApiCall(word);
+    async function callAPIWithRetry(word, maxRetries = 2) {
+        let lastError;
+        
+        for (let i = 0; i <= maxRetries; i++) {
+            try {
+                if (i > 0) {
+                    console.log(`第${i}次重试请求...`);
+                    showNotification(`正在重新尝试请求...`, 'info');
+                }
+                
+                // 原有的API调用代码
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ word }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.message || data.error);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error(`请求失败 (尝试 ${i+1}/${maxRetries+1}):`, error);
+                lastError = error;
+                
+                // 如果是网络错误或超时，等待后重试
+                if (error.name === 'AbortError' || error.message.includes('network')) {
+                    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+                    continue;
+                } else {
+                    // 如果是其他错误，直接中断重试
+                    break;
+                }
+            }
         }
         
-        try {
-            console.log('Sending API request:', word);
-            
-            // Add timeout handling
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
-            
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ word }),
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId); // Clear timeout
-            
-            if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
-            }
-            
-            const data = await response.json();
-            console.log('API response:', data);
-            return data;
-        } catch (error) {
-            console.error('API call error:', error);
-            
-            // Show more detailed error information
-            if (error.name === 'AbortError') {
-                console.error('Request timed out. Worker may be inactive or URL incorrect.');
-            }
-            
-            // If API call fails, use mock data
-            console.log('Using mock data instead');
-            return mockApiCall(word);
-        }
+        // 所有重试都失败了
+        console.error('所有重试都失败了:', lastError);
+        showNotification(`API请求失败: ${lastError.message}`, 'error');
+        return mockApiCall(word);
     }
     
     // 检查API连接是否可用
@@ -245,4 +286,17 @@ async function callOpenAI(word) {
     return await response.json();
 }
 */ 
+
+// 添加通知函数
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // 3秒后自动移除
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+} 
 
