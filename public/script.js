@@ -1,9 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     // API endpoint - change this when deploying
     // const API_URL = '/api/explain-word'; // Local development
-    const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word'; // Production
-    // If the above URL doesn't work, try using the full URL, ensuring there are no extra spaces
-    // const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word';
+    // const API_URL = 'https://lingering-flower-420b.2913760687.workers.dev/api/explain-word'; // Cloudflare Worker
+    
+    // 阿里云函数计算地址 - 需要修改为您部署后的实际地址
+    const API_URL = 'https://func-hjcbg-kgzbjasltj.cn-shanghai.fcapp.run';
+    
+    // 自动检测可用的API
+    checkConnection(API_URL);
 
     const wordInput = document.getElementById('word-input');
     const searchBtn = document.getElementById('search-btn');
@@ -147,6 +151,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // 检查API连接是否可用
+    async function checkConnection(apiUrl) {
+        console.log('Checking connection to API:', apiUrl);
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
+            
+            await fetch(apiUrl, {
+                method: 'OPTIONS',
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            console.log('API connection successful');
+        } catch (error) {
+            console.error('API connection failed:', error);
+            alert('警告：API连接失败，将使用模拟数据。请确保API地址正确，并且已经部署了阿里云函数。');
+        }
+    }
+    
     // Mock API call (used when API is unavailable)
     async function mockApiCall(word) {
         // Simulate network delay
@@ -174,9 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         };
     }
-});
-
-// In a real application, we need to add a backend service to handle API requests
+});// In a real application, we need to add a backend service to handle API requests
 // Below is an example API call function, but it will not be used in pure frontend demo
 
 /*
@@ -196,3 +218,4 @@ async function callOpenAI(word) {
     return await response.json();
 }
 */ 
+
