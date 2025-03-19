@@ -159,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     showNotification(`正在重新尝试请求...`, 'info');
                 }
                 
-                // 原有的API调用代码
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
@@ -174,6 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 clearTimeout(timeoutId);
                 
+                if (!response.ok) {
+                    throw new Error(`API返回错误: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.error) {
@@ -185,12 +188,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(`请求失败 (尝试 ${i+1}/${maxRetries+1}):`, error);
                 lastError = error;
                 
-                // 如果是网络错误或超时，等待后重试
                 if (error.name === 'AbortError' || error.message.includes('network')) {
                     await new Promise(r => setTimeout(r, 1000 * (i + 1)));
                     continue;
                 } else {
-                    // 如果是其他错误，直接中断重试
                     break;
                 }
             }
@@ -198,18 +199,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 所有重试都失败了
         console.error('所有重试都失败了:', lastError);
-        showNotification(`API请求失败: ${lastError.message}`, 'error');
-        return mockApiCall(word);
+        showNotification(`服务暂时不可用，请稍后重试`, 'error');
+        throw lastError;
     }
     
     // 检查API连接是否可用
     async function checkConnection(apiUrl) {
         console.log('Checking connection to API:', apiUrl);
         try {
-            // 尝试直接发送POST请求而不是OPTIONS请求
-            // OPTIONS请求可能会被CORS阻止，但POST请求在出错时会更明确
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
             
             const testResponse = await fetch(apiUrl, {
                 method: 'POST',
@@ -228,44 +227,27 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.error('API返回错误状态码:', testResponse.status);
                 isApiAvailable = false;
-                console.warn('API返回错误，将使用模拟数据。请检查API配置。');
+                showNotification('服务暂时不可用，请稍后重试', 'error');
             }
         } catch (error) {
             console.error('API connection failed:', error);
             isApiAvailable = false;
-            
-            // 显示错误信息给用户
-            showNotification('API连接失败，请稍后重试', 'error');
+            showNotification('服务暂时不可用，请稍后重试', 'error');
         }
     }
     
-    // Mock API call (used when API is unavailable)
-    async function mockApiCall(word) {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+    // 添加通知函数
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
         
-        // Return mock data
-        return {
-            babyExplanation: `"${word}" is a fun word! Imagine if you see a puppy, you can say "${word}" to describe it. This word is like magic, it helps us express our thoughts and feelings.`,
-            meaningsList: [
-                `${word} can be a noun, referring to an object or concept`,
-                `${word} can also be a verb, meaning to do something`,
-                `Sometimes ${word} can be an adjective, describing qualities of things`
-            ],
-            phrases: [
-                `${word} out - indicating completion or ending`,
-                `${word} up - indicating increase or improvement`,
-                `${word} in - indicating participation or inclusion`,
-                `${word} on - indicating continuation or persistence`,
-                `${word} off - indicating departure or cancellation`
-            ],
-            relatedWords: [
-                `${word}er - usually refers to a person who does this action`,
-                `${word}ing - the present participle of this word`,
-                `${word}ed - the past tense of this word`
-            ]
-        };
-    }
+        // 3秒后自动移除
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    } 
 });// In a real application, we need to add a backend service to handle API requests
 // Below is an example API call function, but it will not be used in pure frontend demo
 
@@ -286,17 +268,4 @@ async function callOpenAI(word) {
     return await response.json();
 }
 */ 
-
-// 添加通知函数
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // 3秒后自动移除
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-} 
 

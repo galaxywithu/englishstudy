@@ -67,11 +67,12 @@ export async function onRequest(context) {
         console.error("Could not read error response", e);
       }
       
-      // 返回错误响应
+      // 返回更详细的错误响应
       return new Response(JSON.stringify({
         error: "Backend service error",
         details: errorText,
-        status: response.status
+        status: response.status,
+        message: `服务暂时不可用 (${response.status})`
       }), {
         status: response.status,
         headers: {
